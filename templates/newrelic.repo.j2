@@ -1,0 +1,14 @@
+[newrelic]
+name=New Relic packages for Enterprise Linux {{ ansible_distribution_major_version }} - $basearch
+baseurl=http://yum.newrelic.com/pub/newrelic/el5/$basearch
+{% if newrelic_repos.newrelic is defined %}
+{%   if newrelic_repos.newrelic %}
+enabled=1
+{%   else %}
+enabled=0
+{%   endif %}
+{% else %}
+enabled=0
+{% endif %}
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-NewRelic
