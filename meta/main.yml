@@ -13,5 +13,5 @@ galaxy_info:
         - 7
   galaxy_tags:
     - newrelic
-    - monitoring
+    - packaging
     - system
