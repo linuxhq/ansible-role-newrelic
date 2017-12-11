@@ -1,6 +1,6 @@
 ---
-- name: Assert that prerequisites exist
-  tags: newrelic-release
+- name: Assert that the prerequisites are defined
+  tags: newrelic
   assert:
     that:
       - newrelic_pkg is defined
@@ -8,39 +8,53 @@
       - newrelic_rel is defined
       - newrelic_baseurl is defined
 
-- name: Execute mktemp
-  tags: newrelic-release
+- name: Generating temporary filename via mktemp
+  tags: newrelic
   command: mktemp -u --suffix .rpm
   register: newrelic_mktemp
 
-- name: Create temporary package
-  tags: newrelic-release
-  get_url: url={{ newrelic_fetch }}
-           dest={{ newrelic_mktemp.stdout }}
+- name: Downloading package to temporary location
+  tags: newrelic
+  get_url:
+    dest: "{{ newrelic_mktemp.stdout }}"
+    url: "{{ newrelic_fetch }}"
   register: newrelic_get_url
   when: newrelic_mktemp|success
 
-- name: Install newrelic-repo
-  tags: newrelic-release
-  yum: name={{ item }}
-       state=present
+- name: Ensure that the newrelic-repo package is installed
+  tags: newrelic
+  become: true
+  yum:
+    name: "{{ item }}"
+    state: present
   register: newrelic_yum
   with_items: "{{ newrelic_mktemp.stdout }}"
   when: newrelic_get_url|success
 
-- name: Configure newrelic.repo
-  tags: newrelic-release
-  template: src=newrelic.repo.j2
-            dest=/etc/yum.repos.d/newrelic.repo
-            owner=root
-            group=root
-            mode=0644
+- name: Applying newrelic.repo configurations
+  tags: newrelic
+  become: true
+  template:
+    src: newrelic.repo.j2
+    dest: /etc/yum.repos.d/newrelic.repo
+    owner: root
+    group: root
+    mode: 0644
   when: newrelic_yum|success
 
-- name: Erase temporary package
-  tags: newrelic-release
-  file: path={{ newrelic_mktemp.stdout }}
-        state=absent
+- name: Ensure that the NewRelic GPG keys are installed
+  tags: newrelic
+  become: true
+  rpm_key:
+    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-NewRelic
+    state: present
+
+- name: Purging temporary package from filesystem
+  tags: newrelic
+  file:
+    path: "{{ newrelic_mktemp.stdout }}"
+    state: absent
   when:
     - newrelic_mktemp|success
     - newrelic_yum|success
+...

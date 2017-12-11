@@ -8,3 +8,4 @@ newrelic_release: "{{ newrelic_pkg }}-{{ newrelic_ver }}-{{ newrelic_rel }}"
 newrelic_fetch: "{{ newrelic_baseurl }}/{{ newrelic_release }}.{{ newrelic_arch }}.rpm"
 newrelic_repos:
   newrelic: False
+...
