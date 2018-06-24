@@ -1,60 +1,71 @@
 ---
-- name: Assert that the prerequisites are defined
+- name: Attempting to generate temporary file
   tags: newrelic
-  assert:
-    that:
-      - newrelic_pkg is defined
-      - newrelic_ver is defined
-      - newrelic_rel is defined
-      - newrelic_baseurl is defined
+  tempfile:
+    prefix: newrelic.
+    state: file
+    suffix: .rpm
+  register: newrelic_tempfile
 
-- name: Generating temporary filename via mktemp
-  tags: newrelic
-  command: mktemp -u --suffix .rpm
-  register: newrelic_mktemp
-
-- name: Downloading package to temporary location
+- name: Attempting to download package to temporary location
   tags: newrelic
   get_url:
-    dest: "{{ newrelic_mktemp.stdout }}"
+    dest: "{{ newrelic_tempfile.path }}"
+    force: yes
     url: "{{ newrelic_fetch }}"
   register: newrelic_get_url
-  when: newrelic_mktemp|success
+  when: newrelic_tempfile is success
 
-- name: Ensure that the newrelic-repo package is installed
+- name: Ensure that the {{ newrelic_pkg }} package is installed
   tags: newrelic
   become: true
   yum:
     name: "{{ item }}"
     state: present
   register: newrelic_yum
-  with_items: "{{ newrelic_mktemp.stdout }}"
-  when: newrelic_get_url|success
+  with_items: "{{ newrelic_tempfile.path }}"
+  when: newrelic_get_url is success
 
-- name: Applying newrelic.repo configurations
+- name: Attempting to purge temporary package from the filesystem
+  tags: newrelic
+  file:
+    path: "{{ newrelic_tempfile.path }}"
+    state: absent
+  when:
+    - newrelic_tempfile is success
+    - newrelic_yum is success
+
+- name: Attempting to overlay newrelic repository configurations
   tags: newrelic
   become: true
   template:
-    src: newrelic.repo.j2
-    dest: /etc/yum.repos.d/newrelic.repo
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
     owner: root
     group: root
     mode: 0644
-  when: newrelic_yum|success
+  with_items:
+    - { src: newrelic.repo.j2, dst: /etc/yum.repos.d/newrelic.repo }
+  when: newrelic_yum is success
 
-- name: Ensure that the NewRelic GPG keys are installed
+- name: Ensure that the newrelic gpg keys are installed
   tags: newrelic
   become: true
   rpm_key:
     key: /etc/pki/rpm-gpg/RPM-GPG-KEY-NewRelic
     state: present
+  when: newrelic_yum is success
 
-- name: Purging temporary package from filesystem
+- name: Ensure that the required newrelic packages are installed
   tags: newrelic
-  file:
-    path: "{{ newrelic_mktemp.stdout }}"
-    state: absent
+  become: true
+  yum:
+    disablerepo: "{{ newrelic_disablerepo|join(',') }}"
+    enablerepo: "{{ newrelic_enablerepo|join(',') }}"
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ newrelic_packages }}"
   when:
-    - newrelic_mktemp|success
-    - newrelic_yum|success
+    - newrelic_packages|length > 0
+    - newrelic_yum is success
 ...

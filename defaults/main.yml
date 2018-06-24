@@ -1,11 +1,13 @@
 ---
-newrelic_pkg: newrelic-repo
-newrelic_ver: 5
-newrelic_rel: 3
 newrelic_arch: noarch
 newrelic_baseurl: "https://yum.newrelic.com/pub/newrelic/el5/{{ ansible_architecture }}"
-newrelic_release: "{{ newrelic_pkg }}-{{ newrelic_ver }}-{{ newrelic_rel }}"
+newrelic_disablerepo: []
+newrelic_enablerepo: []
 newrelic_fetch: "{{ newrelic_baseurl }}/{{ newrelic_release }}.{{ newrelic_arch }}.rpm"
-newrelic_repos:
-  newrelic: False
+newrelic_packages: []
+newrelic_pkg: newrelic-repo
+newrelic_rel: 3
+newrelic_release: "{{ newrelic_pkg }}-{{ newrelic_ver }}-{{ newrelic_rel }}"
+newrelic_repository_newrelic: false
+newrelic_ver: 5
 ...
