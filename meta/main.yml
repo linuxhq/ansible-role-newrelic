@@ -1,6 +1,7 @@
 ---
 dependencies: []
 galaxy_info:
+  role_name: newrelic
   author: tkimball83
   description: RHEL/CentOS - NewRelic RPM repository
   license: GPLv3
